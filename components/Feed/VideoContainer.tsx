@@ -9,9 +9,10 @@ interface VideoContainerProps {
   userName: string;
   description: string;
   videoUrl: string;
+  isGlobalPaused?: boolean;
 }
 
-export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, description, videoUrl }) => {
+export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, description, videoUrl, isGlobalPaused }) => {
   const [liked, setLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -31,8 +32,9 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          if (!isPaused) {
-            videoRef.current?.play().catch(() => {
+          if (!isPaused && !isGlobalPaused) {
+            videoRef.current?.play().catch(e => {
+              console.log("Auto-play blocked");
               setIsMuted(true);
               if (videoRef.current) videoRef.current.muted = true;
             });
@@ -43,6 +45,15 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       });
     }, options);
 
+    // Force pause if global pause is active
+    if (isGlobalPaused) {
+      videoRef.current?.pause();
+    } else {
+      // If we're not globally paused, check if we should play based on intersection
+      // This is handled by the observer usually, but we might need a manual trigger here
+      // for when isGlobalPaused changes back to false.
+    }
+
     if (videoRef.current) {
       observer.observe(videoRef.current);
     }
@@ -52,7 +63,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         observer.unobserve(videoRef.current);
       }
     };
-  }, [isPaused]);
+  }, [isPaused, isGlobalPaused]);
 
   const handleTap = useCallback((e: React.MouseEvent) => {
     const now = Date.now();

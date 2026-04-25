@@ -13,6 +13,9 @@ export default function Home() {
   const [activeView, setActiveView] = useState<'feed' | 'gallery'>('feed');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
+  // Track if any modal is active to pause background videos
+  const isGlobalPaused = isAddModalOpen;
+  
   // Track dynamically added wishes
   const [newWishes, setNewWishes] = useState<any[]>([]);
 
@@ -43,7 +46,7 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="h-full w-full">
         {activeView === 'feed' ? (
-          <ReelView extraVideos={newWishes} />
+          <ReelView extraVideos={newWishes} isGlobalPaused={isGlobalPaused} />
         ) : (
           <PhotoGrid />
         )}

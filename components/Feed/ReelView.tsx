@@ -32,16 +32,21 @@ const DEFAULT_VIDEOS = [
 
 interface ReelViewProps {
   extraVideos?: any[];
+  isGlobalPaused?: boolean;
 }
 
-export const ReelView: React.FC<ReelViewProps> = ({ extraVideos = [] }) => {
+export const ReelView: React.FC<ReelViewProps> = ({ extraVideos = [], isGlobalPaused = false }) => {
   // Combine default videos with user-submitted ones
   const allVideos = [...extraVideos, ...DEFAULT_VIDEOS];
 
   return (
     <div className="w-full h-full snap-container hide-scrollbar">
       {allVideos.map((video) => (
-        <VideoContainer key={video.id} {...video} />
+        <VideoContainer 
+          key={video.id} 
+          {...video} 
+          isGlobalPaused={isGlobalPaused} 
+        />
       ))}
     </div>
   );

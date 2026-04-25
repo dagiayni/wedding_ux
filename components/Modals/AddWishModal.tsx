@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Upload, Send, CheckCircle2, Circle, StopCircle, RefreshCw } from 'lucide-react';
+import { X, Camera, Upload, Send, CheckCircle2, Circle, StopCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 interface AddWishModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   // Camera states
   const [showPreview, setShowPreview] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -25,6 +26,14 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  // Attach stream to video element
+  useEffect(() => {
+    if (showPreview && stream && videoPreviewRef.current) {
+      videoPreviewRef.current.srcObject = stream;
+      videoPreviewRef.current.play().catch(err => console.error("Video play error:", err));
+    }
+  }, [showPreview, stream]);
 
   // Stop camera when modal closes
   useEffect(() => {
@@ -34,18 +43,23 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   }, [isOpen]);
 
   const startCamera = async () => {
+    setIsCameraLoading(true);
     try {
+      // Use low resolution for faster startup if needed, but 'user' should be fine
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' }, 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 720 },
+          height: { ideal: 1280 }
+        }, 
         audio: true 
       });
       setStream(mediaStream);
       setShowPreview(true);
-      if (videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = mediaStream;
-      }
+      setIsCameraLoading(false);
     } catch (err) {
       console.error("Error accessing camera:", err);
+      setIsCameraLoading(false);
       alert("Could not access camera. Please check permissions.");
     }
   };
@@ -57,18 +71,23 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
     }
     setShowPreview(false);
     setIsRecording(false);
+    setIsCameraLoading(false);
   };
 
   const startRecording = () => {
     if (!stream) return;
     
-    const mediaRecorder = new MediaRecorder(stream);
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp8,opus' // More efficient for web
+    });
     mediaRecorderRef.current = mediaRecorder;
     
     const chunks: BlobPart[] = [];
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/mp4' });
+      const blob = new Blob(chunks, { type: 'video/webm' });
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
     };
@@ -207,25 +226,32 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50 font-sans"
                     />
                     <textarea 
                       placeholder="Your Message..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50 resize-none h-24"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50 resize-none h-24 font-sans"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       type="button"
+                      disabled={isCameraLoading}
                       onClick={startCamera}
-                      className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-gold/10 hover:border-gold/30 transition-all group"
+                      className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-gold/10 hover:border-gold/30 transition-all group disabled:opacity-50"
                     >
-                      <Camera className="text-gold group-hover:scale-110" size={28} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Live Record</span>
+                      {isCameraLoading ? (
+                        <Loader2 className="text-gold animate-spin" size={28} />
+                      ) : (
+                        <Camera className="text-gold group-hover:scale-110" size={28} />
+                      )}
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+                        {isCameraLoading ? 'Loading...' : 'Live Record'}
+                      </span>
                     </button>
 
                     <input type="file" accept="video/*,image/*" ref={galleryInputRef} className="hidden" />
