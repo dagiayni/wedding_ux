@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, Music, Volume2, VolumeX, Play } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Music, Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface VideoContainerProps {
@@ -9,13 +9,15 @@ interface VideoContainerProps {
   userName: string;
   description: string;
   videoUrl: string;
+  index: number;
   isGlobalPaused?: boolean;
 }
 
-export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, description, videoUrl, isGlobalPaused }) => {
+export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, description, videoUrl, index, isGlobalPaused }) => {
   const [liked, setLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   
@@ -25,7 +27,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
   useEffect(() => {
     const options = {
       root: null,
-      rootMargin: '200px', // Preload when 200px from viewport
+      rootMargin: '400px', // More aggressive pre-fetch for upcoming videos
       threshold: 0.5
     };
 
@@ -33,8 +35,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           if (!isPaused && !isGlobalPaused) {
-            videoRef.current?.play().catch(e => {
-              console.log("Auto-play blocked");
+            videoRef.current?.play().catch(() => {
               setIsMuted(true);
               if (videoRef.current) videoRef.current.muted = true;
             });
@@ -45,13 +46,8 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       });
     }, options);
 
-    // Force pause if global pause is active
     if (isGlobalPaused) {
       videoRef.current?.pause();
-    } else {
-      // If we're not globally paused, check if we should play based on intersection
-      // This is handled by the observer usually, but we might need a manual trigger here
-      // for when isGlobalPaused changes back to false.
     }
 
     if (videoRef.current) {
@@ -95,20 +91,26 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
     }
   }, []);
 
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      const newMuted = !videoRef.current.muted;
-      videoRef.current.muted = newMuted;
-      setIsMuted(newMuted);
-    }
-  };
-
   return (
     <div 
       className="relative w-full h-full bg-black snap-section overflow-hidden cursor-pointer"
       onClick={handleTap}
     >
+      {/* Loading Spinner */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 backdrop-blur-sm"
+          >
+            <Loader2 className="text-gold animate-spin mb-4" size={48} />
+            <p className="text-gold/60 text-[10px] uppercase tracking-[0.3em] font-sans">Buffering Moment</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <video
         ref={videoRef}
         src={videoUrl}
@@ -116,9 +118,15 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         loop
         muted={isMuted}
         playsInline
-        preload="metadata" // Save bandwidth by only loading metadata initially
+        // Only preload the first video to speed up initial load
+        preload={index === 0 ? "auto" : "metadata"}
+        onLoadStart={() => setIsLoading(true)}
+        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => setIsLoading(false)}
       />
 
+      {/* Heart Animation Overlay */}
       <AnimatePresence>
         {showHeartAnim && (
           <motion.div
@@ -132,6 +140,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         )}
       </AnimatePresence>
 
+      {/* Play/Pause Icon */}
       <AnimatePresence>
         {isPaused && (
           <motion.div
@@ -149,6 +158,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
 
+      {/* UI Overlays */}
       <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-10" onClick={(e) => e.stopPropagation()}>
         <button onClick={() => setLiked(!liked)} className="flex flex-col items-center gap-1 group">
           <div className={`p-3 rounded-full bg-black/20 backdrop-blur-md transition-all duration-300 ${liked ? 'text-gold scale-110' : 'text-white group-hover:text-gold'}`}>
@@ -171,7 +181,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
           <span className="text-xs font-semibold drop-shadow-md text-white">Share</span>
         </button>
         
-        <button onClick={toggleMute} className="flex flex-col items-center gap-1 group">
+        <button onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); if(videoRef.current) videoRef.current.muted = !isMuted; }} className="flex flex-col items-center gap-1 group">
           <div className="p-3 rounded-full bg-black/20 backdrop-blur-md transition-all duration-300 text-white group-hover:text-gold">
             {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
           </div>

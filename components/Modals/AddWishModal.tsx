@@ -15,7 +15,6 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const [description, setDescription] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  // Camera states
   const [showPreview, setShowPreview] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
@@ -27,7 +26,6 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Attach stream to video element
   useEffect(() => {
     if (showPreview && stream && videoPreviewRef.current) {
       videoPreviewRef.current.srcObject = stream;
@@ -35,7 +33,6 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
     }
   }, [showPreview, stream]);
 
-  // Stop camera when modal closes
   useEffect(() => {
     if (!isOpen) {
       stopCamera();
@@ -45,10 +42,11 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const startCamera = async () => {
     setIsCameraLoading(true);
     try {
-      // Use low resolution for faster startup if needed, but 'user' should be fine
+      // Force 9:16 Aspect Ratio (TikTok Style)
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'user',
+          aspectRatio: { ideal: 9/16 },
           width: { ideal: 720 },
           height: { ideal: 1280 }
         }, 
@@ -77,9 +75,12 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const startRecording = () => {
     if (!stream) return;
     
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp8,opus' // More efficient for web
-    });
+    // Check supported types
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') 
+      ? 'video/webm;codecs=vp9,opus' 
+      : 'video/webm;codecs=vp8,opus';
+
+    const mediaRecorder = new MediaRecorder(stream, { mimeType });
     mediaRecorderRef.current = mediaRecorder;
     
     const chunks: BlobPart[] = [];
@@ -147,10 +148,11 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                   <CheckCircle2 size={80} strokeWidth={1} />
                 </motion.div>
                 <h2 className="text-2xl font-serif text-gold">Wish Sent!</h2>
-                <p className="text-white/40 italic">Your message will appear in the live feed shortly.</p>
+                <p className="text-white/40 italic">Your message will appear shortly.</p>
               </div>
             ) : showPreview ? (
               <div className="flex flex-col gap-6">
+                {/* Fixed 9:16 Container for Preview */}
                 <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-inner">
                   <video 
                     ref={videoPreviewRef} 
@@ -192,7 +194,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                     </div>
                   </div>
                 </div>
-                <p className="text-center text-white/40 text-xs italic">Record a short message for the couple</p>
+                <p className="text-center text-white/40 text-xs italic">Recording in TikTok Style (9:16)</p>
               </div>
             ) : (
               <>
@@ -207,7 +209,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                   </div>
 
                   {previewUrl && (
-                    <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gold/30">
+                    <div className="relative aspect-[9/16] max-h-[300px] bg-black rounded-xl overflow-hidden border border-gold/30 mx-auto">
                       <video src={previewUrl} className="w-full h-full object-cover" controls />
                       <button 
                         type="button"
@@ -226,14 +228,14 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50 font-sans"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 font-sans"
                     />
                     <textarea 
                       placeholder="Your Message..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 focus:outline-none focus:border-gold/50 resize-none h-24 font-sans"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 resize-none h-24 font-sans"
                     />
                   </div>
 
@@ -250,7 +252,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                         <Camera className="text-gold group-hover:scale-110" size={28} />
                       )}
                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
-                        {isCameraLoading ? 'Loading...' : 'Live Record'}
+                        Live Record
                       </span>
                     </button>
 
@@ -261,13 +263,13 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                       className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-gold/10 hover:border-gold/30 transition-all group"
                     >
                       <Upload className="text-gold group-hover:scale-110" size={28} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">From Gallery</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Gallery</span>
                     </button>
                   </div>
 
                   <button 
                     type="submit"
-                    className="w-full bg-gold text-charcoal font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] active:scale-95 transition-all mt-2"
+                    className="w-full bg-gold text-charcoal font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] active:scale-95 transition-all"
                   >
                     <Send size={18} />
                     <span className="uppercase tracking-widest text-sm">SEND WISH</span>
