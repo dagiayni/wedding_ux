@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn } from 'lucide-react';
+import Image from 'next/image';
 
 const MOCK_PHOTOS = [
   { id: 1, src: '/image/photo_1_2026-04-25_21-07-26.jpg', height: 'h-64' },
@@ -37,10 +38,13 @@ export const PhotoGrid: React.FC = () => {
             onClick={() => setSelectedPhoto(photo.src)}
             className={`mb-4 w-full rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative group cursor-pointer ${photo.height}`}
           >
-            <img
+            <Image
               src={photo.src}
               alt={`Wedding Memory ${photo.id}`}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 768px) 50vw, 33vw"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
               <ZoomIn className="text-gold" size={32} />
@@ -49,7 +53,6 @@ export const PhotoGrid: React.FC = () => {
         ))}
       </div>
 
-      {/* Fullscreen Lightbox */}
       <AnimatePresence>
         {selectedPhoto && (
           <motion.div
@@ -62,7 +65,7 @@ export const PhotoGrid: React.FC = () => {
             <motion.button
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="absolute top-10 right-6 z-[210] p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="absolute top-10 right-6 z-[210] p-3 rounded-full bg-white/10 text-white"
               onClick={() => setSelectedPhoto(null)}
             >
               <X size={28} />
@@ -76,15 +79,18 @@ export const PhotoGrid: React.FC = () => {
               className="relative w-full max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              <img
+              <Image
                 src={selectedPhoto}
                 alt="Selected Memory"
+                width={1200}
+                height={1600}
                 className="w-full h-full object-contain"
+                priority
               />
               
               <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-gold font-serif text-xl">A Beautiful Moment</p>
-                <p className="text-white/60 text-sm italic">Captured at the grand celebration</p>
+                <p className="text-white/60 text-sm italic font-sans">Captured at the grand celebration</p>
               </div>
             </motion.div>
           </motion.div>

@@ -18,14 +18,13 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
   const [showHeartAnim, setShowHeartAnim] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Interaction states
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
   const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
     const options = {
       root: null,
-      rootMargin: '0px',
+      rootMargin: '200px', // Preload when 200px from viewport
       threshold: 0.5
     };
 
@@ -33,8 +32,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           if (!isPaused) {
-            videoRef.current?.play().catch(e => {
-              console.log("Auto-play blocked");
+            videoRef.current?.play().catch(() => {
               setIsMuted(true);
               if (videoRef.current) videoRef.current.muted = true;
             });
@@ -61,24 +59,17 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
     const DOUBLE_TAP_DELAY = 300;
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected: Clear the single tap timer
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
         clickTimer.current = null;
       }
-      
-      // Execute Like
       setLiked(true);
       setShowHeartAnim(true);
       setTimeout(() => setShowHeartAnim(false), 800);
-      lastTapRef.current = 0; // Reset to avoid triple tap issues
+      lastTapRef.current = 0;
     } else {
-      // First tap or single tap
       lastTapRef.current = now;
-      
-      // Start a timer for single tap action
       clickTimer.current = setTimeout(() => {
-        // Execute Pause/Play
         if (videoRef.current) {
           if (videoRef.current.paused) {
             videoRef.current.play();
@@ -107,7 +98,6 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       className="relative w-full h-full bg-black snap-section overflow-hidden cursor-pointer"
       onClick={handleTap}
     >
-      {/* Video Content */}
       <video
         ref={videoRef}
         src={videoUrl}
@@ -115,9 +105,9 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         loop
         muted={isMuted}
         playsInline
+        preload="metadata" // Save bandwidth by only loading metadata initially
       />
 
-      {/* Heart Animation Overlay (Double Tap) */}
       <AnimatePresence>
         {showHeartAnim && (
           <motion.div
@@ -131,7 +121,6 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         )}
       </AnimatePresence>
 
-      {/* Play/Pause Icon Overlay */}
       <AnimatePresence>
         {isPaused && (
           <motion.div
@@ -147,15 +136,10 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         )}
       </AnimatePresence>
 
-      {/* Dark Overlay for UI visibility */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
 
-      {/* Interactions Overlay */}
       <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-10" onClick={(e) => e.stopPropagation()}>
-        <button 
-          onClick={() => setLiked(!liked)}
-          className="flex flex-col items-center gap-1 group"
-        >
+        <button onClick={() => setLiked(!liked)} className="flex flex-col items-center gap-1 group">
           <div className={`p-3 rounded-full bg-black/20 backdrop-blur-md transition-all duration-300 ${liked ? 'text-gold scale-110' : 'text-white group-hover:text-gold'}`}>
             <Heart fill={liked ? "currentColor" : "none"} size={28} />
           </div>
@@ -183,7 +167,6 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         </button>
       </div>
 
-      {/* Content Overlay */}
       <div className="absolute left-0 right-16 bottom-24 p-6 z-10 pointer-events-none">
         <h3 className="font-bold text-lg mb-1 flex items-center gap-2 drop-shadow-lg text-white">
           @{userName}
@@ -192,9 +175,9 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
         <p className="text-sm text-white drop-shadow-lg line-clamp-2 mb-4 leading-relaxed font-sans">
           {description}
         </p>
-        <div className="flex items-center gap-2 text-white/80 drop-shadow-md">
+        <div className="flex items-center gap-2 text-white/80 drop-shadow-md font-sans">
           <Music size={14} className="animate-pulse" />
-          <span className="text-xs italic truncate font-sans">Original Sound - Romantic Wedding Mix</span>
+          <span className="text-xs italic truncate">Original Sound - Romantic Wedding Mix</span>
         </div>
       </div>
     </div>
