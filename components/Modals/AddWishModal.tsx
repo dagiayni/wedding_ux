@@ -42,13 +42,12 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const startCamera = async () => {
     setIsCameraLoading(true);
     try {
-      // Force 9:16 Aspect Ratio (TikTok Style)
+      // Relaxed constraints to avoid forced zooming/cropping
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'user',
-          aspectRatio: { ideal: 9/16 },
-          width: { ideal: 720 },
-          height: { ideal: 1280 }
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }, 
         audio: true 
       });
@@ -75,7 +74,6 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
   const startRecording = () => {
     if (!stream) return;
     
-    // Check supported types
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') 
       ? 'video/webm;codecs=vp9,opus' 
       : 'video/webm;codecs=vp8,opus';
@@ -152,14 +150,13 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
               </div>
             ) : showPreview ? (
               <div className="flex flex-col gap-6">
-                {/* Fixed 9:16 Container for Preview */}
-                <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-inner">
+                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-inner">
                   <video 
                     ref={videoPreviewRef} 
                     autoPlay 
                     muted 
                     playsInline 
-                    className="w-full h-full object-cover scale-x-[-1]" 
+                    className="w-full h-full object-contain scale-x-[-1]" 
                   />
                   
                   <div className="absolute inset-0 flex flex-col justify-between p-6">
@@ -181,7 +178,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                           onClick={startRecording}
                           className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center group transition-all"
                         >
-                          <div className="w-16 h-16 rounded-full bg-red-500 group-hover:scale-90 transition-transform shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
+                          <div className="w-16 h-16 rounded-full bg-red-500 group-hover:scale-90 transition-transform" />
                         </button>
                       ) : (
                         <button 
@@ -194,7 +191,7 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                     </div>
                   </div>
                 </div>
-                <p className="text-center text-white/40 text-xs italic">Recording in TikTok Style (9:16)</p>
+                <p className="text-center text-white/40 text-xs italic font-sans">Recording normal message</p>
               </div>
             ) : (
               <>
@@ -205,12 +202,12 @@ export const AddWishModal: React.FC<AddWishModalProps> = ({ isOpen, onClose, onA
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                   <div className="text-center">
                     <h2 className="text-2xl font-serif text-gold mb-1">Share Your Joy</h2>
-                    <p className="text-white/30 text-[10px] uppercase tracking-[0.2em]">Add to the Eternal Story</p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-sans">Add to the Eternal Story</p>
                   </div>
 
                   {previewUrl && (
-                    <div className="relative aspect-[9/16] max-h-[300px] bg-black rounded-xl overflow-hidden border border-gold/30 mx-auto">
-                      <video src={previewUrl} className="w-full h-full object-cover" controls />
+                    <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gold/30 mx-auto">
+                      <video src={previewUrl} className="w-full h-full object-contain" controls />
                       <button 
                         type="button"
                         onClick={() => setPreviewUrl(null)}
