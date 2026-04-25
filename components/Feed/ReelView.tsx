@@ -43,7 +43,7 @@ export const ReelView: React.FC<ReelViewProps> = ({ extraVideos = [], isGlobalPa
     <div className="w-full h-full snap-container hide-scrollbar bg-black">
       {allVideos.map((video, index) => (
         <VideoContainer 
-          key={video.id} 
+          key={`video-${video.id}-${index}`} 
           {...video} 
           index={index}
           isGlobalPaused={isGlobalPaused} 

@@ -33,6 +33,7 @@ export default function Home() {
       <AnimatePresence mode="wait">
         {activeView === 'feed' && (
           <motion.div
+            key="top-nav-motion"
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}

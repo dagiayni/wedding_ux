@@ -100,6 +100,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       <AnimatePresence>
         {isLoading && (
           <motion.div 
+            key="video-loader"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -130,6 +131,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       <AnimatePresence>
         {showHeartAnim && (
           <motion.div
+            key="heart-anim"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [1, 1.2, 1], opacity: 1 }}
             exit={{ scale: 2, opacity: 0 }}
@@ -144,6 +146,7 @@ export const VideoContainer: React.FC<VideoContainerProps> = ({ userName, descri
       <AnimatePresence>
         {isPaused && (
           <motion.div
+            key="play-pause-icon"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
